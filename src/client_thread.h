@@ -13,7 +13,6 @@ struct Client{
     pthread_t thread_id;
     int socket;
 
-    
     ssize_t name_len = 0;
     char name[MAX_NAME_SIZE];
     ssize_t msg_size = 0;

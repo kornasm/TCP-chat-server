@@ -54,6 +54,4 @@ void prepare_messege_for_client(Client *client, char *msg){
     if(client->name_len > 0){
         client->msg_size += client->name_len + 2;
     }
-    
-    return;
 }

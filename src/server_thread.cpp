@@ -63,14 +63,14 @@ void server_handle_client_disconnected(Client * client, std::vector<pthread_t> *
 }
 void server_handle_messege(Client *client, std::vector<pthread_t> *threads){
     pthread_t sending_thread = client->thread_id;
-    lastSignal = SIGUSR2;
+    //lastSignal = SIGUSR2;
     for(unsigned int i = 0; i < threads->size(); i++){
         if((*threads)[i] != sending_thread){
             pthread_kill((*threads)[i], SIGUSR2);
         }
     }
     pthread_kill(sending_thread, SIGUSR2);
-    lastSignal = 0;
+    //lastSignal = 0;
 }
 
 inline bool check_client_disconnected(Client *client){

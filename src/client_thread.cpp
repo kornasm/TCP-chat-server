@@ -76,12 +76,15 @@ void *client_thread_work(void *args){
 
     while(doWork){
         client->msg_size = recv(client->socket, buf, MAX_MSG_SIZE, 0);
+        
+        // if logujący na stdout
         if(client->msg_size > 0){
             std::cout << "\nMSG received from " << client->socket << ",  msg_length: " << client->msg_size << "\n";
             for(int i = 0; i < client->msg_size; i++){
                 std::cout << buf[i];
             }
         }
+        
         if(client->msg_size == -1){
             if(EINTR == errno){
                 if(doWork){
