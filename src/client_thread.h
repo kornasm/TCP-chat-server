@@ -22,14 +22,14 @@ struct Client{
 };
 
 void wait_for_signal(int signo);
-void block_signal(int sigNo, int mode = SIG_BLOCK, bool unblockall = false);
+void block_signal(int sigNo);
 void set_handler(void (*f)(int), int sigNo);
-void thread_sigusr2_handler(int signal); // empty handler. The only reason for this is to interrupt
-                                         // blocking recv without exiting thread
 
+// empty handler. The only reason for this is to interrupt blocking calls
+void thread_sigusr2_handler(int signal);
 
-void thread_handle_client_disconnected(Client *client);
 void thread_handle_messege_received(Client *client, char *buf);
+void notify_main_thread(Client *client);
 
 void *client_thread_work(void *args);
 

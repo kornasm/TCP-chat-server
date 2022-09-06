@@ -2,6 +2,7 @@
 
 #include "client_thread.h"
 
+#include <cstddef>
 #include <sys/socket.h>
 #include <netinet/in.h>
 
@@ -28,7 +29,6 @@ void sigusr1_handler(int signal){
 
 ChatData *init_chat_data(){
     ChatData *chat = new ChatData();
-    chat->last_msg_t = 0;
     chat->msg_rec_mutex = new pthread_mutex_t();
     return chat;
 }
@@ -49,12 +49,6 @@ int create_socket(uint16_t port){
     return sock;
 }
 
-int accept_new_client(int server_socket){
-    int client_sock;
-    client_sock = accept(server_socket, NULL, NULL);
-    return client_sock;
-}
-
 void server_handle_client_disconnected(Client * client, std::vector<pthread_t> *threads){
     pthread_t finishing_thread = client->thread_id;
     threads->erase(std::remove(threads->begin(), threads->end(), finishing_thread), threads->end());
@@ -63,30 +57,24 @@ void server_handle_client_disconnected(Client * client, std::vector<pthread_t> *
 }
 void server_handle_messege(Client *client, std::vector<pthread_t> *threads){
     pthread_t sending_thread = client->thread_id;
-    //lastSignal = SIGUSR2;
     for(unsigned int i = 0; i < threads->size(); i++){
         if((*threads)[i] != sending_thread){
             pthread_kill((*threads)[i], SIGUSR2);
         }
     }
     pthread_kill(sending_thread, SIGUSR2);
-    //lastSignal = 0;
 }
 
 inline bool check_client_disconnected(Client *client){
-    return client->socket == 0;
+    return client->socket == CLIENT_DISCONNECTED;
 }
 
-Client *init_new_client(ChatData *chat, int client_socket){
-    Client *new_client_data = new Client();
-    new_client_data->server = chat;
-    new_client_data->socket = client_socket;
-    return new_client_data;
-}
-
-void create_client_thread(Client *client, std::vector<pthread_t> *threads){
+void add_new_client(ChatData *chat, int socket, std::vector<pthread_t> *threads){
+    Client *new_client = new Client();
+    new_client->server = chat;
+    new_client->socket = socket;
     pthread_t th;
-    pthread_create(&th, NULL, client_thread_work, (void*)client);
+    pthread_create(&th, NULL, client_thread_work, (void*)new_client);
     threads->push_back(th);
 }
 
@@ -96,7 +84,7 @@ void main_thread_func(uint16_t port){
 
     ChatData *chat = init_chat_data();
     while(doWork){
-        int new_client_socket = accept_new_client(server_socket);
+        int new_client_socket = accept(server_socket, NULL, NULL);
         if(new_client_socket == -1 && EINTR == errno){ // signal received
             if(lastSignal == SIGINT)
                 break;
@@ -110,8 +98,7 @@ void main_thread_func(uint16_t port){
             }
         }
         if(new_client_socket >= 0){
-            Client *client = init_new_client(chat, new_client_socket);
-            create_client_thread(client, &threads);
+            add_new_client(chat, new_client_socket, &threads);
         }
     }
 
@@ -124,6 +111,5 @@ void main_thread_func(uint16_t port){
 
     delete chat->msg_rec_mutex;
     delete chat;
-
     return;
 }
